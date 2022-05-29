@@ -25,13 +25,15 @@ class Menu (commands.Cog):
     @commands.group(name='menu')
     async def menu(self, ctx):
         msg = '_*****Main menu*****_\n'
-        msg += f'🎱 : `{prefix}8b` - 8ball\n'
+        msg += f'🎱 : `{prefix}eb` - 8ball\n'
         msg += f'⚪ : `{prefix}ch` - Checkers\n'
-        msg += f'❌ : `{prefix}o` - Checkers\n'
+        msg += f'❌ : `{prefix}o` - Tic Tac Toe\n'
+        msg += f'🔢 : `{prefix}o` - Four in a row\n'
         message_menu = await ctx.channel.send(msg)
         await message_menu.add_reaction("🎱")
         await message_menu.add_reaction("⚪")
         await message_menu.add_reaction("❌")
+        await message_menu.add_reaction("🔢")
         self.menu_sessions.append(MenuSession(ctx, self, message_menu))
 
 
@@ -47,8 +49,10 @@ class Menu (commands.Cog):
             self.command_sessions.append(command)
         elif reaction.emoji == "⚪":
             command = self.client.get_command("checkers")
+            self.command_sessions.append(command)
         elif reaction.emoji == "❌":
             command =self.client.get_command("tic-tac-toe")
+            self.command_sessions.append(command)
         if command != None:
             await ctx.invoke(command)
         return

@@ -22,12 +22,12 @@ class EightBall(Game):
 
     # Game instructions
 
-    @commands.group(name='eightball', aliases=['eb'], case_insensitive=True, invoke_without_command=True)
+    @commands.group(name='eightball', aliases=['eb', '8b'], case_insensitive=True, invoke_without_command=False)
     async def eightball(self, ctx):
         self.help_message = ctx.send(instructions())
         await self.help_message
 
-    @eightball.command(aliases=[""])
+    @eightball.command(aliases=['eb', '8b'])
     async def ask(self, ctx, *, question):
         responses = ["It is certain.",
                      "It is decidedly so.",
