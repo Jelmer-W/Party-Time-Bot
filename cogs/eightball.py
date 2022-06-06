@@ -22,7 +22,9 @@ class EightBall(commands.Cog):
 
     # Game instructions
 
-    @commands.group(name='eightball', aliases=['eb', '8ball'], case_insensitive=True, invoke_without_command=True)
+
+    @commands.group(name='eightball', aliases=['eb', '8b'], case_insensitive=True, invoke_without_command=True)
+
     async def eightball(self, ctx):
         self.help_message = ctx.send(instructions())
         await self.help_message

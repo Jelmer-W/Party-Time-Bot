@@ -13,6 +13,7 @@ with open("./config.json") as config_file:
     config = json.load(config_file)
 
 client = commands.Bot(command_prefix=config['prefix'], intents=discord.Intents.all(), case_insensitive=True)
+
 prefix = config['prefix']
 
 # Running confirmation
@@ -20,14 +21,9 @@ prefix = config['prefix']
 async def on_ready():
     print("Party-Time-Bot running")
 
-
-@client.event
-async def on_message(message):
-    msg = message
-    if msg.content.startswith(".hello"):
-        await msg.channel.send(f'Hello {msg.author.name}')
-    await client.process_commands(msg)
-
+@client.command()
+async def hello(ctx):
+    await ctx.channel.send(f'Hello {ctx.author.name}')
 
 @client.command()
 async def load(ctx, extension):
