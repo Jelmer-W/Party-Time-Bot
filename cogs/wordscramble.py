@@ -8,8 +8,10 @@ import time
 
 
 def instructions():
-    msg = f"Start the game by typing `{prefix}ws`.\n"
+    msg = f"Start a game by typing `{prefix}ws`.\n"
     msg += f"Guess the scrambled word by typing `{prefix}ws [guess]`.\n"
+    msg += f"Shuffle the letters from the word by typing `{prefix}ws shuffle`.\n"
+    msg += f"Show the word again by typing `{prefix}ws repeat`.\n"
     msg += f"Quit an existing game by typing `{prefix}ws quit`.\n"
     msg += f"Open this help menu by typing `{prefix}ws help`.\n"
     return msg
@@ -26,20 +28,19 @@ class WordScramble(Game):
         self.answer = ""
         self.shuffledWord = ""
         self.authorid = 0
+        self.authorname = ""
         self.started = False
         self.guesses = 1
         self.timer = time.time()
-        self.noOfShuffles = 2
-
-
-    def checkForSamePerson(self, userID):
-        return (self.authorid is userID)
+        self.noShuffles = 2
 
 
     async def isGameStarted(self, ctx):
         if not self.started:
             await ctx.send("There is no game running at the moment.")
-        return self.started
+        elif not self.authorid is ctx.author.id:
+            await ctx.send(self.authorname + " is currently playing the game. Please wait until their game is finished.")
+        return (self.started and (self.authorid is ctx.author.id))
 
 
     async def checkAnswer(self, ctx, guess):
@@ -56,6 +57,7 @@ class WordScramble(Game):
             self.guesses += 1
         return self.answer == guess
 
+
     async def startGame(self, ctx, *args):
         await ctx.send(f"Guess the scrambled word by typing `{prefix}ws [guess]`.\n")
         with open(os.path.join(os.path.dirname(__file__), '../common/wordlist.txt'),
@@ -63,9 +65,11 @@ class WordScramble(Game):
             wordList = [line.strip() for line in f]
             self.answer = random.choice(wordList).lower()
         self.authorid = ctx.author.id
+        self.authorname = ctx.author.name
         self.started = True
         self.timer = time.time()
         self.guesses = 1
+        self.noShuffles = 2
         responses = list(self.answer)
         random.shuffle(responses)
         self.shuffledWord = ""
@@ -79,9 +83,9 @@ class WordScramble(Game):
         if not self.started:                                # Creating a game
             await self.startGame(ctx, *args)
         else:                                               # Checking whether guessed word is the correct word
-            if not self.checkForSamePerson(ctx.author.id):
+            if not await self.isGameStarted(ctx):
                 return
-            if not args:
+            elif not args:
                 await ctx.send("Please enter your guess before starting a new game.")
             else:
                 await self.checkAnswer(ctx, args[0].lower())
@@ -98,27 +102,32 @@ class WordScramble(Game):
     @wordscramble.command()
     async def quit(self, ctx):
         if await self.isGameStarted(ctx):
-            if self.checkForSamePerson(ctx.author.id):
-                await ctx.send("The word was `" + self.answer + "`.")
-                await ctx.send("Quitting the game...")
-                self.started = False
-            else:
-                return
+            await ctx.send("The word was `" + self.answer + "`.")
+            await ctx.send("Quitting the game...")
+            self.started = False
+
 
     @wordscramble.command()
     async def shuffle(self, ctx):
         if await self.isGameStarted(ctx):
-            if self.noOfShuffles == 0:
-                await ctx.send("Shuffles remaining: " + str(self.noOfShuffles))
+            if self.noShuffles == 0:
+                await ctx.send("Shuffles remaining: " + str(self.noShuffles))
                 return
-            await ctx.send("Shuffles remaining: " + str(self.noOfShuffles - 1))
-            self.noOfShuffles -= 1
+            await ctx.send("Shuffles remaining: " + str(self.noShuffles - 1))
+            self.noShuffles -= 1
             responses = list(self.shuffledWord)
             random.shuffle(responses)
             self.shuffledWord = ""
             for x in responses:
                 self.shuffledWord += x
             await ctx.send("`" + self.shuffledWord + "`")
+
+
+    @wordscramble.command()
+    async def repeat(self, ctx):
+        if await self.isGameStarted(ctx):
+            await ctx.send("`" + self.shuffledWord + "`")
+
 
 def setup(client):
     client.add_cog(WordScramble(client))
