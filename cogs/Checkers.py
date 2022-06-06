@@ -20,6 +20,7 @@ class CheckersGame(Game):
         self.client = client
         self.SIZE = 8
         self.board = [['_' for _ in range(self.SIZE)] for _ in range(self.SIZE)]
+        self.checkers = ['r', 'R', 'b', 'B']
         self.whosemove = 'r'
         self.help_message = None
         self.move = []
@@ -101,81 +102,38 @@ class CheckersGame(Game):
     def is_king(self, x, y):
         return self.board[x][y] == 'R' or self.board[x][y] == 'B'
 
+    def hittable_dir(self, x, y, dx, dy):
+        if self.whosemove == 'r':
+            return self.board[x+dx/2][y+dy/2] == 'b' and self.in_range(x+dx,y+dy) and self.board[x+dx][y+dy] == '_' or (self.board[x+dx/2][y+dy/2] == 'B' and self.in_range(x+dx, y+dy) and self.board[x+dx][y+dy] == '_')
+        else:
+            return self.board[x+dx/2][y+dy/2] == 'r' and self.in_range(x+dx,y+dy) and self.board[x+dx][y+dy] == '_' or (self.board[x+dx/2][y+dy/2] == 'R' and self.in_range(x+dx,y+dy) and self.board[x+dx][y+dy] == '_')
+
+
     def check_dir(self, x, y, direction):
-        if self.board[x][y] == 'r':
-            if self.is_king(x,y):
-                if direction == 'nw':
-                    if self.in_range(x - 1, y - 1):
-                        value = self.board[x - 1][y - 1]
-                        return value == '_' or (value == 'b' and self.in_range(x-2,y-2) and self.board[x-2][y-2] == '_') or (value == 'B' and self.in_range(x-2,y-2))
-                elif direction == 'ne':
-                    if self.in_range(x + 1, y - 1):
-                        value = self.board[x + 1][y - 1]
-                        return value == '_' or (value == 'b' and self.in_range(x+2,y-2) and self.board[x+2][y-2] == '_') or (value == 'B' and self.in_range(x+2,y-2))
-            elif direction == 'sw':
-                if self.in_range(x - 1, y + 1):
-                    value = self.board[x - 1][y + 1]
-                    return value == '_' or (value == 'b' and self.in_range(x-2,y+2) and self.board[x-2][y+2] == '_') or (value == 'B' and self.in_range(x-2,y+2))
-            elif direction == 'se':
-                if self.in_range(x + 1, y + 1):
-                    value = self.board[x + 1][y + 1]
-                    return value == '_' or (value == 'b' and self.in_range(x+2,y+2) and self.board[x+2][y+2] == '_') or (value == 'B' and self.in_range(x+2,y+2))
-        elif self.board[x][y] == 'b':
-            if direction == 'nw':
+        match direction:
+            case 'nw':
                 if self.in_range(x - 1, y - 1):
                     value = self.board[x - 1][y - 1]
-                    return value == '_' or (value == 'r' and self.in_range(x-2,y-2) and self.board[x-2][y-2] == '_') or (value == 'R' and self.in_range(x-2,y-2))
-            elif direction == 'ne':
+                return value == '_' or self.hittable_dir(x, y, -2, -2)
+            case 'ne':
                 if self.in_range(x + 1, y - 1):
                     value = self.board[x + 1][y - 1]
-                    return value == '_' or (value == 'r' and self.in_range(x+2,y-2) and self.board[x+2][y-2] == '_') or (value == 'R' and self.in_range(x+2,y-2))
-            if self.is_king(x, y):
-                if direction == 'sw':
-                    if self.in_range(x - 1, y + 1):
-                        value = self.board[x - 1][y + 1]
-                        return value == '_' or (value == 'r' and self.in_range(x-2,y+2) and self.board[x-2][y+2] == '_') or (value == 'R' and self.in_range(x-2,y+2))
-                elif direction == 'se':
-                    if self.in_range(x + 1, y + 1):
-                        value = self.board[x + 1][y + 1]
-                        return value == '_' or (value == 'r' and self.in_range(x+2,y+2) and self.board[x+2][y+2] == '_') or (value == 'R' and self.in_range(x+2,y+2))
+                    return value == '_' or self.hittable_dir(x, y, 2, -2)
+            case 'sw':
+                if self.in_range(x - 1, y + 1):
+                    value = self.board[x - 1][y + 1]
+                    return value == '_' or self.hittable_dir(x, y, -2, 2)
+            case 'se':
+                if self.in_range(x + 1, y + 1):
+                    value = self.board[x + 1][y + 1]
+                    return value == '_' or self.hittable_dir(x, y, 2, 2)
         return False
 
-    def can_hit(self, x, y):
+    def can_hit_dirs(self, x, y):
         directions = []
-        if self.board[x][y] == 'b':
-            if self.in_range(x - 1, y - 1):
-                value = self.board[x - 1][y - 1]
-                if (value == 'r' and self.in_range(x-2,y-2) and self.board[x-2][y-2] == '_') or (value == 'R' and self.in_range(x-2,y-2)):
-                    directions.append('nw')
-            if self.in_range(x + 1, y - 1):
-                value = self.board[x + 1][y - 1]
-                if (value == 'r' and self.in_range(x+2,y-2) and self.board[x+2][y-2] == '_') or (value == 'R' and self.in_range(x+2,y-2)):
-                    directions.append('ne')
-            if self.in_range(x - 1, y + 1):
-                value = self.board[x - 1][y + 1]
-                if (value == 'r' and self.in_range(x-2,y+2) and self.board[x-2][y+2] == '_') or (value == 'R' and self.in_range(x-2,y+2)):
-                    directions.append('sw')
-            if self.in_range(x + 1, y + 1):
-                value = self.board[x + 1][y + 1]
-                if (value == 'r' and self.in_range(x+2,y+2) and self.board[x+2][y+2] == '_') or (value == 'R' and self.in_range(x+2,y+2)):
-                    directions.append('se')
-        elif self.board[x][y] == 'r':
-            if self.in_range(x - 1, y - 1):
-                value = self.board[x - 1][y - 1]
-                if (value == 'b' and self.in_range(x-2,y-2) and self.board[x-2][y-2] == '_') or (value == 'B' and self.in_range(x-2,y-2)):
-                    directions.append('nw')
-            if self.in_range(x + 1, y - 1):
-                value = self.board[x + 1][y - 1]
-                if (value == 'b' and self.in_range(x+2,y-2) and self.board[x+2][y-2] == '_') or (value == 'B' and self.in_range(x+2,y-2)):
-                    directions.append('ne')
-            if self.in_range(x - 1, y + 1):
-                value = self.board[x - 1][y + 1]
-                if (value == 'b' and self.in_range(x-2,y+2) and self.board[x-2][y+2] == '_') or (value == 'B' and self.in_range(x-2,y+2)):
-                    directions.append('sw')
-            if self.in_range(x + 1, y + 1):
-                value = self.board[x + 1][y + 1]
-                if (value == 'b' and self.in_range(x+2,y+2) and self.board[x+2][y+2] == '_') or (value == 'B' and self.in_range(x+2,y+2)):
-                    directions.append('se')
+        for dir in self.dirs:
+            self.check_dir(x, y, dir)
+            directions.append(dir)
         return directions
 
     def move_up_left(self, xfrom, yfrom):
@@ -431,7 +389,7 @@ class CheckersGame(Game):
             xto = to[0]
             yto = to[1]
             self.execute_move(xfrom, yfrom, xto, yto)
-            can_hits = self.can_hit(xto, yto)
+            can_hits = self.can_hit_dirs(xto, yto)
             if len(can_hits) > 0 and self.hit:
                 self.move[0] = self.x_to_emoji(xto)
                 self.move[1] = self.y_to_emoji(yto)
@@ -453,7 +411,7 @@ class CheckersGame(Game):
             xto = to[0]
             yto = to[1]
             self.execute_move(xfrom, yfrom, xto, yto)
-            can_hits = self.can_hit(xto, yto)
+            can_hits = self.can_hit_dirs(xto, yto)
             if len(can_hits) > 0 and self.hit:
                 self.move[0] = self.x_to_emoji(xto)
                 self.move[1] = self.y_to_emoji(yto)
@@ -475,7 +433,7 @@ class CheckersGame(Game):
             xto = to[0]
             yto = to[1]
             self.execute_move(xfrom, yfrom, xto, yto)
-            can_hits = self.can_hit(xto, yto)
+            can_hits = self.can_hit_dirs(xto, yto)
             if len(can_hits) > 0 and self.hit:
                 self.move[0] = self.x_to_emoji(xto)
                 self.move[1] = self.y_to_emoji(yto)
@@ -497,7 +455,7 @@ class CheckersGame(Game):
             xto = to[0]
             yto = to[1]
             self.execute_move(xfrom, yfrom, xto, yto)
-            can_hits = self.can_hit(xto, yto)
+            can_hits = self.can_hit_dirs(xto, yto)
             if len(can_hits) > 0 and self.hit:
                 self.move[0] = self.x_to_emoji(xto)
                 self.move[1] = self.y_to_emoji(yto)
