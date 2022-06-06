@@ -8,6 +8,7 @@ import time
 
 
 def instructions():
+
     msg = f"Start a game by typing `{prefix}ws`.\n"
     msg += f"Guess the scrambled word by typing `{prefix}ws [guess]`.\n"
     msg += f"Shuffle the letters from the word by typing `{prefix}ws shuffle`.\n"
@@ -127,6 +128,7 @@ class WordScramble(Game):
     async def repeat(self, ctx):
         if await self.isGameStarted(ctx):
             await ctx.send("`" + self.shuffledWord + "`")
+
 
 
 def setup(client):

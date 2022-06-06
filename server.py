@@ -1,7 +1,7 @@
-import discord
-import os
 import json
-from discord import VoiceChannel
+import os
+
+import discord
 from discord.ext import commands
 from dotenv import load_dotenv, find_dotenv
 
@@ -16,12 +16,10 @@ client = commands.Bot(command_prefix=config['prefix'], intents=discord.Intents.a
 
 prefix = config['prefix']
 
-
 # Running confirmation
 @client.event
 async def on_ready():
     print("Party-Time-Bot running")
-
 
 @client.command()
 async def hello(ctx):
@@ -42,7 +40,7 @@ async def unload(ctx, extension):
 
 
 @client.command()
-async def reload(ctx):
+async def reload_all(ctx):
     for filename in os.listdir('./cogs'):
         if filename.endswith('.py'):
             file = filename[:-3]
