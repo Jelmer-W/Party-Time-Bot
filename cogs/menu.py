@@ -27,11 +27,14 @@ class Menu (commands.Cog):
         msg = '_*****Main menu*****_\n'
         msg += f'🎱 : `{prefix}8b` - 8ball\n'
         msg += f'⚪ : `{prefix}ch` - Checkers\n'
-        msg += f'❌ : `{prefix}o` - Tic-tac-toe\n'
+        msg += f'❌ : `{prefix}o` - Checkers\n'
+        msg+= f'📮 : `{prefix}mb` - mail box\n'
+
         message_menu = await ctx.channel.send(msg)
         await message_menu.add_reaction("🎱")
         await message_menu.add_reaction("⚪")
         await message_menu.add_reaction("❌")
+        await message_menu.add_reaction("📮")
         self.menu_sessions.append(MenuSession(ctx, self, message_menu))
 
 
