@@ -1,9 +1,11 @@
 from copy import copy
-import math
+
+import discord
 from discord.ext import commands
 
 from common.Game import Game
 from server import prefix
+
 
 def instructions():
     msg = "**Checkers Help**\n"
@@ -17,6 +19,7 @@ def instructions():
 
 class CheckersGame(Game):
     def __init__(self, client):
+        super().__init__(client)
         self.client = client
         self.SIZE = 8
         self.board = [['_' for _ in range(self.SIZE)] for _ in range(self.SIZE)]
@@ -103,37 +106,59 @@ class CheckersGame(Game):
         return self.board[x][y] == 'R' or self.board[x][y] == 'B'
 
     def hittable_dir(self, x, y, dx, dy):
-        if self.whosemove == 'r':
-            return self.board[x+dx/2][y+dy/2] == 'b' and self.in_range(x+dx,y+dy) and self.board[x+dx][y+dy] == '_' or (self.board[x+dx/2][y+dy/2] == 'B' and self.in_range(x+dx, y+dy) and self.board[x+dx][y+dy] == '_')
+        if self.whosemove == 'r' or self.whosemove == 'R':
+            if self.in_range(x + dx, y + dy):
+                if self.board[round(x + dx / 2)][round(y + dy / 2)] == 'b' and self.board[x + dx][y + dy] == '_':
+                    return True
+                elif self.board[round(x + dx / 2)][round(y + dy / 2)] == 'B' and self.board[x + dx][y + dy] == '_':
+                    return True
+            return False
         else:
-            return self.board[x+dx/2][y+dy/2] == 'r' and self.in_range(x+dx,y+dy) and self.board[x+dx][y+dy] == '_' or (self.board[x+dx/2][y+dy/2] == 'R' and self.in_range(x+dx,y+dy) and self.board[x+dx][y+dy] == '_')
-
+            if self.in_range(x + dx, y + dy):
+                if self.board[round(x + dx / 2)][round(y + dy / 2)] == 'r' and self.board[x + dx][y + dy] == '_':
+                    return True
+                elif self.board[round(x + dx / 2)][round(y + dy / 2)] == 'R' and self.board[x + dx][y + dy] == '_':
+                    return True
+            return False
 
     def check_dir(self, x, y, direction):
         match direction:
             case 'nw':
                 if self.in_range(x - 1, y - 1):
                     value = self.board[x - 1][y - 1]
-                return value == '_' or self.hittable_dir(x, y, -2, -2)
+                    if self.hittable_dir(x, y, -2, -2):
+                        return True
+                    return value == '_' and not self.whosemove == 'r'
             case 'ne':
                 if self.in_range(x + 1, y - 1):
                     value = self.board[x + 1][y - 1]
-                    return value == '_' or self.hittable_dir(x, y, 2, -2)
+                    if self.hittable_dir(x, y, 2, -2):
+                        return True
+                    return value == '_' and not self.whosemove == 'r'
             case 'sw':
                 if self.in_range(x - 1, y + 1):
                     value = self.board[x - 1][y + 1]
-                    return value == '_' or self.hittable_dir(x, y, -2, 2)
+                    if self.hittable_dir(x, y, -2, 2):
+                        return True
+                    return value == '_' and not self.whosemove == 'b'
             case 'se':
                 if self.in_range(x + 1, y + 1):
                     value = self.board[x + 1][y + 1]
-                    return value == '_' or self.hittable_dir(x, y, 2, 2)
+                    if self.hittable_dir(x, y, 2, 2):
+                        return True
+                    return value == '_' and not self.whosemove == 'b'
         return False
 
     def can_hit_dirs(self, x, y):
         directions = []
-        for dir in self.dirs:
-            self.check_dir(x, y, dir)
-            directions.append(dir)
+        if self.hittable_dir(x, y, -2, -2):
+            directions.append("nw")
+        if self.hittable_dir(x, y, 2, -2):
+            directions.append("ne")
+        if self.hittable_dir(x, y, -2, 2):
+            directions.append("sw")
+        if self.hittable_dir(x, y, 2, 2):
+            directions.append("se")
         return directions
 
     def move_up_left(self, xfrom, yfrom):
@@ -168,7 +193,7 @@ class CheckersGame(Game):
         self.board[xfrom][yfrom] = '_'
         self.board[xto][yto] = self.whosemove
         if abs(xto - xfrom) == 2:
-            self.board[round((xfrom+xto) / 2)][round((yfrom+yto) / 2)] = '_'
+            self.board[round((xfrom + xto) / 2)][round((yfrom + yto) / 2)] = '_'
             self.hit = True
         if self.whosemove == 'r':
             self.red_checkers -= 1
@@ -181,10 +206,11 @@ class CheckersGame(Game):
         else:
             self.whosemove = 'r'
 
-    def game_over(self, board):
+    def game_over(self):
         return self.blue_checkers == 0 or self.red_checkers == 0
 
-    def emoji_to_x(self, emoji):
+    @staticmethod
+    def emoji_to_x(emoji):
         match emoji:
             case "1️⃣":
                 return 0
@@ -203,7 +229,8 @@ class CheckersGame(Game):
             case "8️⃣":
                 return 7
 
-    def emoji_to_y(self, y):
+    @staticmethod
+    def emoji_to_y(y):
         match y:
             case "🇦":
                 return 0
@@ -222,7 +249,8 @@ class CheckersGame(Game):
             case "🇭":
                 return 7
 
-    def x_to_emoji(self, x):
+    @staticmethod
+    def x_to_emoji(x):
         match x:
             case 0:
                 return "1️⃣"
@@ -241,7 +269,8 @@ class CheckersGame(Game):
             case 7:
                 return "8️⃣"
 
-    def y_to_emoji(self, y):
+    @staticmethod
+    def y_to_emoji(y):
         match y:
             case 0:
                 return "🇦"
@@ -262,41 +291,41 @@ class CheckersGame(Game):
 
     async def print_message(self, ctx):
         reactions = {""}
-        msg = ""
-        # Turn message
+        reactions.remove("")
+        emblem = ":blue_circle:"
         if self.whosemove == 'r':
-            msg += f"It's your turn {self.player1}!\n" \
-                   "Turn : :red_circle:\n" \
-                   "Select a checker\n"
-        elif self.whosemove == 'b':
-            msg += f"It's your turn {self.player2}!\n" \
-                   "Turn : :blue_circle:\n" \
-                   "Select a checker\n"
-        msg += self.print_board(self.board)
-        checkers_actions = await ctx.channel.send(msg)
+            emblem = ":red_circle:"
+        embed = discord.Embed(
+            title='Checkers',
+            description=f"It's your turn {self.player1}!\n" \
+                        f"Turn : {emblem}\n" \
+                        "Select a checker\n" \
+                        f"{self.print_board(self.board)}\n"
+        )
+        msg = await ctx.send(embed=embed)
+
         movables = self.movables(self.board)
         # Add the reaction buttons from movable checkers
         for i in movables:
             reactions.add(self.y_to_emoji(i[1]))
             reactions.add(self.x_to_emoji(i[0]))
-        reactions.remove("")
+
         for reaction in sorted(reactions):
-            await checkers_actions.add_reaction(reaction)
+            await msg.add_reaction(reaction)
 
     async def move_message(self, ctx, xfrom, yfrom):
         reactions = []
-        msg = ""
-        # Turn message
+        emblem = ":blue_circle:"
         if self.whosemove == 'r':
-            msg += f"It's your turn {self.player1}!\n" \
-                   "Turn : :red_circle:\n" \
-                   "Select a direction\n"
-        elif self.whosemove == 'b':
-            msg += f"It's your turn {self.player2}!\n" \
-                   "Turn : :blue_circle:\n" \
-                   "Select a direction\n"
-        msg += self.print_board(self.board)
-        checkers_actions = await ctx.channel.send(msg)
+            emblem = ":red_circle:"
+        embed = discord.Embed(
+            title='Checkers',
+            description=f"It's your turn {self.player1}!\n" \
+                        f"Turn : {emblem}\n" \
+                        "Select direction\n" \
+                        f"{self.print_board(self.board)}\n"
+        )
+        msg = await ctx.send(embed=embed)
         if self.check_dir(xfrom, yfrom, 'nw'):
             reactions.append("↖️")
         if self.check_dir(xfrom, yfrom, 'ne'):
@@ -305,26 +334,23 @@ class CheckersGame(Game):
             reactions.append("↙️")
         if self.check_dir(xfrom, yfrom, 'se'):
             reactions.append("↘️")
-        if self.whosemove == 'r':
-            reactions.sort(reverse=True)
+        reactions.append("↩️")
         for reaction in reactions:
-            await checkers_actions.add_reaction(reaction)
-        return checkers_actions
+            await msg.add_reaction(reaction)
 
     async def can_hits_message(self, ctx, can_hits):
         reactions = []
-        msg = ""
-        # Turn message
+        emblem = ":blue_circle:"
         if self.whosemove == 'r':
-            msg += f"It's your turn {self.player1}!\n" \
-                   "Turn : :red_circle:\n" \
-                   "Select a direction\n"
-        elif self.whosemove == 'b':
-            msg += f"It's your turn {self.player2}!\n" \
-                   "Turn : :blue_circle:\n" \
-                   "Select a direction\n"
-        msg += self.print_board(self.board)
-        checkers_actions = await ctx.channel.send(msg)
+            emblem = ":red_circle:"
+        embed = discord.Embed(
+            title='Checkers',
+            description=f"It's your turn {self.player1}!\n" \
+                        f"Turn : {emblem}\n" \
+                        "Select next hit\n" \
+                        f"{self.print_board(self.board)}\n"
+        )
+        msg = await ctx.send(embed=embed)
         if 'nw' in can_hits:
             reactions.append("↖️")
         if 'ne' in can_hits:
@@ -336,25 +362,22 @@ class CheckersGame(Game):
         if self.whosemove == 'r':
             reactions.sort(reverse=True)
         for reaction in reactions:
-            await checkers_actions.add_reaction(reaction)
-        return checkers_actions
+            await msg.add_reaction(reaction)
 
     async def error_message(self, ctx):
         reactions = {""}
-        msg = ""
-        # Turn message
+        emblem = ":blue_circle:"
         if self.whosemove == 'r':
-            msg += f"It's your turn {self.player1}!\n" \
-                   "Turn : :red_circle:\n" \
-                   "Select a checker\n" \
-                   "Previous input was invalid\n"
-        elif self.whosemove == 'b':
-            msg += f"It's your turn {self.player2}!\n" \
-                   "Turn : :blue_circle:\n" \
-                   "Select a checker\n" \
-                   "Previous input was invalid\n"
-        msg += self.print_board(self.board)
-        checkers_actions = await ctx.channel.send(msg)
+            emblem = ":red_circle:"
+        embed = discord.Embed(
+            title='Checkers',
+            description=f"It's your turn {self.player1}!\n" \
+                        f"Turn : {emblem}\n" \
+                        "Select a checker\n" \
+                        "Invalid input\n" \
+                        f"{self.print_board(self.board)}\n"
+        )
+        msg = await ctx.send(embed=embed)
         movables = self.movables(self.board)
         # Add the reaction buttons from movable checkers
         for i in movables:
@@ -362,12 +385,13 @@ class CheckersGame(Game):
             reactions.add(self.x_to_emoji(i[0]))
         reactions.remove("")
         for reaction in sorted(reactions):
-            await checkers_actions.add_reaction(reaction)
+            await msg.add_reaction(reaction)
 
     async def input_handler(self, ctx, reaction):
         self.move.sort()
         xfrom = self.emoji_to_x(self.move[0])
         yfrom = self.emoji_to_y(self.move[1])
+
         valid_dirs = 0
         for direction in self.dirs:
             if self.check_dir(xfrom, yfrom, direction):
@@ -377,99 +401,63 @@ class CheckersGame(Game):
             await reaction.message.delete()
             await self.error_message(ctx)
             return
+
         await reaction.message.delete()
         await self.move_message(ctx, xfrom, yfrom)
         self.select_mode = True
 
     async def select_handler(self, ctx, new_reaction, reaction):
-        if new_reaction == "↖️":
-            xfrom = self.emoji_to_x(self.move[0])
-            yfrom = self.emoji_to_y(self.move[1])
-            to = self.move_up_left(xfrom, yfrom)
-            xto = to[0]
-            yto = to[1]
-            self.execute_move(xfrom, yfrom, xto, yto)
-            can_hits = self.can_hit_dirs(xto, yto)
-            if len(can_hits) > 0 and self.hit:
-                self.move[0] = self.x_to_emoji(xto)
-                self.move[1] = self.y_to_emoji(yto)
-                self.hit = False
+        to = []
+        xfrom = self.emoji_to_x(self.move[0])
+        yfrom = self.emoji_to_y(self.move[1])
+        match new_reaction:
+            case "↖️":
+                to = self.move_up_left(xfrom, yfrom)
+            case "↗️":
+                to = self.move_up_right(xfrom, yfrom)
+            case "↙️":
+                to = self.move_up_right(xfrom, yfrom)
+            case "↘️":
+                to = self.move_down_right(xfrom, yfrom)
+            case "↩️":
+                self.move.clear()
+                self.select_mode = False
                 await reaction.message.delete()
-                await self.can_hits_message(ctx, can_hits)
+                await self.print_message(ctx)
                 return
-            self.move.clear()
-            self.turn_id = self.player2_id
-            self.switch_whosemove()
+        xto = to[0]
+        yto = to[1]
+        self.execute_move(xfrom, yfrom, xto, yto)
+        # Check available hits for current player
+        can_hits = self.can_hit_dirs(xto, yto)
+        if len(can_hits) > 0 and self.hit:
+            self.move[0] = self.x_to_emoji(xto)
+            self.move[1] = self.y_to_emoji(yto)
+            self.hit = False
             await reaction.message.delete()
-            await self.print_message(ctx)
-            self.select_mode = False
+            await self.can_hits_message(ctx, can_hits)
             return
-        elif new_reaction == "↗️":
-            xfrom = self.emoji_to_x(self.move[0])
-            yfrom = self.emoji_to_y(self.move[1])
-            to = self.move_up_right(xfrom, yfrom)
-            xto = to[0]
-            yto = to[1]
-            self.execute_move(xfrom, yfrom, xto, yto)
-            can_hits = self.can_hit_dirs(xto, yto)
-            if len(can_hits) > 0 and self.hit:
-                self.move[0] = self.x_to_emoji(xto)
-                self.move[1] = self.y_to_emoji(yto)
-                self.hit = False
+
+
+        self.select_mode = False
+        self.move.clear()
+        self.turn_id = self.player2_id
+        self.switch_whosemove()
+
+        # Check available hits for next player
+        movables = self.movables(self.board)
+        for position in movables:
+            can_hit = self.can_hit_dirs(position[0], position[1])
+            if len(can_hit) > 0:
+                self.select_mode = True
+                self.move.clear()
+                self.move = [self.x_to_emoji(position[0]), self.y_to_emoji(position[1])]
                 await reaction.message.delete()
-                await self.can_hits_message(ctx, can_hits)
+                await self.can_hits_message(ctx, can_hit)
                 return
-            self.move.clear()
-            self.turn_id = self.player2_id
-            self.switch_whosemove()
-            await reaction.message.delete()
-            await self.print_message(ctx)
-            self.select_mode = False
-            return
-        elif new_reaction == "↙️":
-            xfrom = self.emoji_to_x(self.move[0])
-            yfrom = self.emoji_to_y(self.move[1])
-            to = self.move_down_left(xfrom, yfrom)
-            xto = to[0]
-            yto = to[1]
-            self.execute_move(xfrom, yfrom, xto, yto)
-            can_hits = self.can_hit_dirs(xto, yto)
-            if len(can_hits) > 0 and self.hit:
-                self.move[0] = self.x_to_emoji(xto)
-                self.move[1] = self.y_to_emoji(yto)
-                self.hit = False
-                await reaction.message.delete()
-                await self.can_hits_message(ctx, can_hits)
-                return
-            self.move.clear()
-            self.turn_id = self.player2_id
-            self.switch_whosemove()
-            await reaction.message.delete()
-            await self.print_message(ctx)
-            self.select_mode = False
-            return
-        elif new_reaction == "↘️":
-            xfrom = self.emoji_to_x(self.move[0])
-            yfrom = self.emoji_to_y(self.move[1])
-            to = self.move_down_right(xfrom, yfrom)
-            xto = to[0]
-            yto = to[1]
-            self.execute_move(xfrom, yfrom, xto, yto)
-            can_hits = self.can_hit_dirs(xto, yto)
-            if len(can_hits) > 0 and self.hit:
-                self.move[0] = self.x_to_emoji(xto)
-                self.move[1] = self.y_to_emoji(yto)
-                self.hit = False
-                await reaction.message.delete()
-                await self.can_hits_message(ctx, can_hits)
-                return
-            self.move.clear()
-            self.turn_id = self.player2_id
-            self.switch_whosemove()
-            await reaction.message.delete()
-            await self.print_message(ctx)
-            self.select_mode = False
-            return
+
+        await reaction.message.delete()
+        await self.print_message(ctx)
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
@@ -479,7 +467,8 @@ class CheckersGame(Game):
             return
         # Set the second player on added reaction
         if self.player2 == "" and self.whosemove == 'b':
-            if new_reaction in ["1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","🇦","🇧","🇨","🇩","🇪","🇫","🇬","🇭"]:
+            if new_reaction in ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "🇦", "🇧", "🇨", "🇩", "🇪",
+                                "🇫", "🇬", "🇭"]:
                 self.move.clear()
                 self.player2 = user.name
                 self.player2_id = user.id
@@ -491,8 +480,8 @@ class CheckersGame(Game):
                 await self.select_handler(ctx, new_reaction, reaction)
                 return
             if len(self.move) < 2:
-                if new_reaction in ["1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣"]:
-                    if len(self.move) == 1 and self.move[0] in ["1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣"]:
+                if new_reaction in ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣"]:
+                    if len(self.move) == 1 and self.move[0] in ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣"]:
                         self.move.clear()
                         await reaction.message.delete()
                         await self.error_message(ctx)
@@ -501,8 +490,8 @@ class CheckersGame(Game):
                     if len(self.move) == 2:
                         await self.input_handler(ctx, reaction)
                         return
-                elif new_reaction in ["🇦","🇧","🇨","🇩","🇪","🇫","🇬","🇭"]:
-                    if len(self.move) == 1 and self.move[0] in ["🇦","🇧","🇨","🇩","🇪","🇫","🇬","🇭"]:
+                elif new_reaction in ["🇦", "🇧", "🇨", "🇩", "🇪", "🇫", "🇬", "🇭"]:
+                    if len(self.move) == 1 and self.move[0] in ["🇦", "🇧", "🇨", "🇩", "🇪", "🇫", "🇬", "🇭"]:
                         self.move.clear()
                         await reaction.message.delete()
                         await self.error_message(ctx)
@@ -512,7 +501,13 @@ class CheckersGame(Game):
                         await self.input_handler(ctx, reaction)
                         return
 
-
+    @commands.Cog.listener()
+    async def on_reaction_remove(self, reaction, user):
+        new_reaction = copy(reaction.emoji)
+        if user == self.client.user:
+            return
+        if user.id == self.turn_id:
+            self.move.remove(new_reaction)
 
     @commands.group(name="checkers", aliases=['ch'], case_insensitive=True, invoke_without_command=True)
     async def checkers(self, ctx):
