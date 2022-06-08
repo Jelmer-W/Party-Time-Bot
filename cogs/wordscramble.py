@@ -13,6 +13,7 @@ from asyncio import TimeoutError
 
 
 def instructions():
+
     msg = f"Start a game by typing `{prefix}ws`.\n"
     msg += f"Guess the scrambled word by typing `{prefix}ws [guess]`.\n"
     msg += f"Shuffle the letters from the word by typing `{prefix}ws shuffle`.\n"
@@ -180,6 +181,7 @@ class WordScramble(Game): #commands.Coq
     async def repeat(self, ctx):
         if await self.isGameStarted(ctx, ctx.author.id):
             await self.sendEmbed(ctx)
+
 
 
 def setup(client):
