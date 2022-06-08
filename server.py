@@ -3,6 +3,7 @@ import os
 
 import discord
 from discord.ext import commands
+from discord_ui import UI
 from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
@@ -13,7 +14,7 @@ with open("./config.json") as config_file:
     config = json.load(config_file)
 
 client = commands.Bot(command_prefix=config['prefix'], intents=discord.Intents.all(), case_insensitive=True)
-
+ui = UI(client)
 prefix = config['prefix']
 
 # Running confirmation
