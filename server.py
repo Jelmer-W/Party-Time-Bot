@@ -3,7 +3,7 @@ import os
 
 import discord
 from discord.ext import commands
-from discord_ui import UI, Button
+from discord_ui import UI
 from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
@@ -14,18 +14,21 @@ with open("./config.json") as config_file:
     config = json.load(config_file)
 
 client = commands.Bot(command_prefix=config['prefix'], intents=discord.Intents.all(), case_insensitive=True)
-ui=UI(client)
+ui = UI(client)
 
 prefix = config['prefix']
+
 
 # Running confirmation
 @client.event
 async def on_ready():
     print("Party-Time-Bot running")
 
+
 @client.command()
 async def hello(ctx):
     await ctx.channel.send(f'Hello {ctx.author.name}')
+
 
 @client.command()
 async def load(ctx, extension):

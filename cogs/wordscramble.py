@@ -23,10 +23,9 @@ def instructions():
     return msg
 
 
-class WordScramble(Game): #commands.Coq
+class WordScramble(commands.Cog): #commands.Coq
 
     def __init__(self, client):
-        super().__init__(client)
         self.client = client
         self._game_name = "wordscramble"
         self._game_command = f"{prefix}wordscramble"
