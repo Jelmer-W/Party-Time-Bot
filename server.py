@@ -1,8 +1,9 @@
-import discord
-import os
 import json
-from discord import VoiceChannel
+import os
+
+import discord
 from discord.ext import commands
+from discord_ui import UI
 from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
@@ -12,25 +13,18 @@ TOKEN = os.getenv('TOKEN')
 with open("./config.json") as config_file:
     config = json.load(config_file)
 
-client = commands.Bot(command_prefix=config['prefix'], intents=discord.Intents.all())
-
+client = commands.Bot(command_prefix=config['prefix'], intents=discord.Intents.all(), case_insensitive=True)
+ui = UI(client)
 prefix = config['prefix']
-
 
 # Running confirmation
 @client.event
 async def on_ready():
     print("Party-Time-Bot running")
 
-
-@client.event
-async def on_message(message):
-    msg = message
-    if msg.content.startswith(".hello"):
-        await msg.channel.send(f'Hello {msg.author.name}')
-
-    await client.process_commands(msg)
-
+@client.command()
+async def hello(ctx):
+    await ctx.channel.send(f'Hello {ctx.author.name}')
 
 @client.command()
 async def load(ctx, extension):
@@ -47,7 +41,7 @@ async def unload(ctx, extension):
 
 
 @client.command()
-async def reload(ctx):
+async def reload_all(ctx):
     for filename in os.listdir('./cogs'):
         if filename.endswith('.py'):
             file = filename[:-3]
@@ -75,3 +69,4 @@ for filename in os.listdir('./cogs'):
         print(f'Cog loaded {file}')
 
 client.run(TOKEN)
+
